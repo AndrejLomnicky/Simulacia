@@ -1,8 +1,12 @@
+import tkinter as tk
+
 fr = open("glider-gun.txt")
 height = int(fr.readline().strip())
 width = int(fr.readline().strip())
+cell_size = 10
 dish1 = []
 dish2 = []
+generation = 0
 
 def create_dishes():
     global dish1, dish2
@@ -15,7 +19,7 @@ def create_dishes():
         for znak in riadok.strip():
             if znak != "-":
                 dish1[y][x] = 1
-            x +=1
+            x += 1
         y += 1
 
 def get_neighbours(dish, x, y):
@@ -30,24 +34,53 @@ def get_neighbours(dish, x, y):
     if y+1 < height and x+1 < width and dish[y+1][x+1] == 1: neighbours += 1
     return neighbours
 
+def paint_dish(dish):
+    for y in range(height):
+        for x in range(width):
+            if dish[y][x] == 1:
+                canvas.create_rectangle(x*cell_size, y*cell_size,(x+1)*cell_size,(y+1)*cell_size,fill="black")
+
 def copy_dishes(source, destination):
-    for y in range(1, height - 1):
-        for x in range(1, width - 1):
+    for y in range(height):
+        for x in range(width):
             neighbours = get_neighbours(source, x, y)
             if source[y][x] == 1:
-                if neighbours < 2:
-                    destination[y][x] = 0   # Pravidlo 1: underpopulation
-                elif neighbours <= 3:
-                    destination[y][x] = 1   # Pravidlo 2: lives on
+                if neighbours < 2 or neighbours > 3:
+                    destination[y][x] = 0
                 else:
-                    destination[y][x] = 0   # Pravidlo 3: overpopulation
+                    destination[y][x] = 1
             else:
                 if neighbours == 3:
-                    destination[y][x] = 1   # Pravidlo 4: reproduction
+                    destination[y][x] = 1
                 else:
                     destination[y][x] = 0
 
+def life():
+    global generation
+    canvas.delete("all")
+    create_grid()
+    if generation % 2 == 0:
+        copy_dishes(dish1, dish2)
+        paint_dish(dish2)
+    else:
+        copy_dishes(dish2, dish1)
+        paint_dish(dish1)
+    generation += 1
+    canvas.after(100, life)
+
+win = tk.Tk()
+win.title("Game of Life")
+canvas = tk.Canvas(win, width=width*cell_size, height=height*cell_size, bg="white")
+canvas.pack()
+
+def create_grid():
+    for y in range(height):
+        canvas.create_line(0, y*cell_size, width*cell_size, y*cell_size, fill="gray69")
+    for x in range(width):
+        canvas.create_line(x*cell_size, 0, x*cell_size, height*cell_size, fill="gray69")
 
 create_dishes()
-print(dish1)
-print(get_neighbours(dish1, 0, 0))
+create_grid()
+paint_dish(dish1)
+life()
+win.mainloop()
